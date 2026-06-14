@@ -9,11 +9,13 @@ import toast from 'react-hot-toast'
 import useAuthStore from '../../store/authStore'
 import useDoctorStore from '../../store/doctorStore'
 import { SPECIALIZATIONS, CITIES, TREATMENT_TYPES } from '../../lib/constants'
+import { supabase } from '../../lib/supabase'
 
 export default function Profile() {
   const { profile } = useAuthStore()
   const { pendingDoctors, verifiedDoctors, submitDoctorProfile } = useDoctorStore()
   const [saving, setSaving] = useState(false)
+  const [dbDoctor, setDbDoctor] = useState(null)
 
   // Check current status of this doctor
   const myPending  = pendingDoctors.find(d => d.profileId === profile?.id)
@@ -21,14 +23,53 @@ export default function Profile() {
 
   const [form, setForm] = useState({
     name:             profile?.full_name || '',
-    specialization:   myPending?.specialty  || myVerified?.specialty  || '',
-    consultation_fee: myPending?.fee        || myVerified?.fee        || '',
-    bio:              myPending?.bio        || myVerified?.bio        || '',
-    city:             myPending?.city       || myVerified?.city       || '',
-    experience:       myPending?.experience || myVerified?.experience || '',
-    qualifications:   myPending?.qualifications || myVerified?.qualifications || '',
-    treatmentType:    myPending?.treatmentType  || myVerified?.treatmentType  || 'allopathic',
+    specialization:   '',
+    consultation_fee: '',
+    bio:              '',
+    city:             '',
+    experience:       '',
+    qualifications:   '',
+    treatmentType:    'allopathic',
   })
+
+  useEffect(() => {
+    if (!profile?.id) return
+
+    let mounted = true
+
+    const loadDoctorProfile = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('doctors')
+          .select('*')
+          .eq('profile_id', profile.id)
+          .maybeSingle()
+
+        if (error) throw error
+        if (!mounted || !data) return
+
+        setDbDoctor(data)
+        setForm((f) => ({
+          ...f,
+          name: data.display_name || profile.full_name || f.name,
+          specialization: data.specialization || f.specialization,
+          consultation_fee: data.consultation_fee ?? f.consultation_fee,
+          bio: data.bio || f.bio,
+          city: data.city || f.city,
+          experience: data.experience_years ?? f.experience,
+          qualifications: Array.isArray(data.qualifications)
+            ? data.qualifications.join(', ')
+            : data.qualifications || f.qualifications,
+          treatmentType: data.treatment_type || f.treatmentType,
+        }))
+      } catch (error) {
+        console.warn('Unable to load doctor profile from Supabase.', error)
+      }
+    }
+
+    loadDoctorProfile()
+    return () => { mounted = false }
+  }, [profile?.id, profile?.full_name])
 
   // Keep form in sync if store changes
   useEffect(() => {
@@ -54,7 +95,11 @@ export default function Profile() {
     if (!form.consultation_fee) { toast.error('Please enter consultation fee'); return }
 
     setSaving(true)
-    await new Promise(r => setTimeout(r, 800)) // simulate save delay
+
+    const qualifications = form.qualifications
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
 
     const result = submitDoctorProfile({
       profileId:      profile?.id,
@@ -70,6 +115,32 @@ export default function Profile() {
       phone:          profile?.phone,
     })
 
+    try {
+      const { data, error } = await supabase
+        .from('doctors')
+        .upsert({
+          profile_id: profile?.id,
+          display_name: form.name || profile?.full_name,
+          specialization: form.specialization,
+          consultation_fee: Number(form.consultation_fee) || 0,
+          bio: form.bio || null,
+          city: form.city || null,
+          experience_years: Number(form.experience) || 0,
+          qualifications: qualifications.length ? qualifications : null,
+          treatment_type: form.treatmentType || 'allopathic',
+          is_available: true,
+        }, { onConflict: 'profile_id' })
+        .select()
+        .single()
+
+      if (error) throw error
+      setDbDoctor(data)
+    } catch (error) {
+      setSaving(false)
+      toast.error(error.message || 'Failed to save profile')
+      return
+    }
+
     setSaving(false)
 
     if (result === 'updated') {
@@ -83,7 +154,7 @@ export default function Profile() {
 
   // ── Status banner ────────────────────────────────────────
   const StatusBanner = () => {
-    if (myVerified) return (
+    if (myVerified || dbDoctor?.is_verified) return (
       <div className="flex items-center gap-3 p-4 bg-secondary-50 border border-secondary-200 rounded-2xl">
         <CheckCircle2 className="w-5 h-5 text-secondary-500 flex-shrink-0" />
         <div>
@@ -205,7 +276,7 @@ export default function Profile() {
                 Cancel
               </Button>
               <Button loading={saving} onClick={handleSave}>
-                {myVerified ? 'Update Profile' : 'Submit for Approval'}
+                {myVerified || dbDoctor?.is_verified ? 'Update Profile' : 'Submit for Approval'}
               </Button>
             </div>
           </div>

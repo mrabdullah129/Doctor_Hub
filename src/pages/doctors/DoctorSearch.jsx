@@ -5,6 +5,7 @@ import {
   X, Calendar
 } from 'lucide-react'
 import Navbar from '../../components/layout/Navbar'
+import DashboardLayout from '../../components/layout/DashboardLayout'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 import Avatar from '../../components/ui/Avatar'
@@ -101,7 +102,7 @@ function DoctorCard({ doctor }) {
   )
 }
 
-export default function DoctorSearch() {
+export default function DoctorSearch({ dashboardLayout = false }) {
   const [searchParams] = useSearchParams()
   const { verifiedDoctors: storeDoctors } = useDoctorStore()   // ← from shared store
 
@@ -223,10 +224,8 @@ export default function DoctorSearch() {
 
   const activeFilterCount = Object.values(filters).filter(Boolean).length
 
-  return (
-    <div className="min-h-screen bg-surface-50">
-      <Navbar />
-
+  const page = (
+    <>
       {/* Search header */}
       <div className="bg-white border-b border-surface-200 shadow-soft">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -371,6 +370,21 @@ export default function DoctorSearch() {
           </div>
         )}
       </div>
+    </>
+  )
+
+  if (dashboardLayout) {
+    return (
+      <DashboardLayout title="Find Doctors">
+        {page}
+      </DashboardLayout>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-surface-50">
+      <Navbar />
+      {page}
     </div>
   )
 }

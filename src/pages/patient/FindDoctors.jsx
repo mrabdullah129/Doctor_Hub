@@ -1,5 +1,5 @@
-// Redirect /patient/search → /doctors
-import { Navigate } from 'react-router-dom'
+import DoctorSearch from '../doctors/DoctorSearch'
+
 export default function FindDoctors() {
-  return <Navigate to="/doctors" replace />
+  return <DoctorSearch dashboardLayout />
 }

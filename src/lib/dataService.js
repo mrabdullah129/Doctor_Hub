@@ -168,6 +168,7 @@ export async function getPatientPrescriptions(patientId) {
     .select(`
       *,
       doctor:doctor_id ( id, display_name, specialization ),
+      patient:patient_id ( id, full_name, email ),
       prescription_medicines ( id, name, strength, form, dosage, frequency, duration, instructions )
     `)
     .eq('patient_id', patientId)
@@ -180,10 +181,12 @@ export async function getPatientPrescriptions(patientId) {
     diagnosis: prescription.diagnosis,
     advice: prescription.advice || '',
     follow_up: prescription.follow_up || '',
+    followUp: prescription.follow_up || '',
     status: prescription.is_active ? 'active' : 'inactive',
     date: prescription.issued_at,
     doctor: prescription.doctor?.display_name || 'Doctor',
     specialty: prescription.doctor?.specialization || '',
+    patientName: prescription.patient?.full_name || prescription.patient?.email || '',
     medicines: prescription.prescription_medicines || [],
   }))
 }
