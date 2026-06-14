@@ -22,7 +22,9 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     await logout()
-    navigate('/')
+    setDropdownOpen(false)
+    setMobileOpen(false)
+    navigate('/login', { replace: true })
   }
 
   // Smooth-scroll to a section. If we're not on the homepage, navigate there first.

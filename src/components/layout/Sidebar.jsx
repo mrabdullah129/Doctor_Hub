@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard, Search, Calendar, FileText, Pill, MessageSquare,
   Users, Stethoscope, CreditCard, BarChart3, Clock, Building2,
@@ -18,9 +18,16 @@ const iconMap = {
 
 export default function Sidebar({ open, onClose }) {
   const location = useLocation()
+  const navigate = useNavigate()
   const { profile, user, logout } = useAuthStore()
   const role = profile?.role || 'patient'
   const navItems = NAVIGATION[role] || NAVIGATION.patient
+
+  const handleLogout = async () => {
+    await logout()
+    onClose?.()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <>
@@ -110,7 +117,7 @@ export default function Sidebar({ open, onClose }) {
         {/* Footer */}
         <div className="p-4 border-t border-surface-200">
           <button
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 hover:bg-red-50 font-medium text-sm transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />

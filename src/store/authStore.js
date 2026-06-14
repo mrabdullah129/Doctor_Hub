@@ -138,10 +138,15 @@ const useAuthStore = create(
 
       logout: async () => {
         const { user } = get()
-        if (!user?.isDemo) {
-          await supabase.auth.signOut()
+        try {
+          if (!user?.isDemo) {
+            await supabase.auth.signOut()
+          }
+        } catch (error) {
+          console.warn('Supabase sign out failed; clearing local session.', error)
+        } finally {
+          set({ user: null, profile: null, error: null, loading: false })
         }
-        set({ user: null, profile: null })
       },
 
       forgotPassword: async (email) => {
