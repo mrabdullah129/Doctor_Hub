@@ -33,7 +33,48 @@ function ensurePageBreak(doc, y, requiredSpace = 30) {
   return y
 }
 
-export function downloadReportPdf(report, quickStats = []) {
+function addMetricCards(doc, metrics, y) {
+  y = addSectionTitle(doc, 'Key Metrics', y)
+  metrics.forEach((metric) => {
+    y = ensurePageBreak(doc, y, 22)
+    doc.setFillColor(248, 250, 252)
+    doc.roundedRect(margin, y - 5, contentWidth, 17, 2, 2, 'F')
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(17, 24, 39)
+    doc.text(metric.label, margin + 5, y + 2)
+    doc.setFontSize(12)
+    doc.text(metric.value, margin + 78, y + 2)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(71, 85, 105)
+    doc.text(metric.note || '-', margin + 78, y + 9)
+    y += 21
+  })
+  return y + 3
+}
+
+function addReportSection(doc, section, y) {
+  y = ensurePageBreak(doc, y, 28)
+  y = addSectionTitle(doc, section.title, y)
+  ;(section.rows || []).forEach((row) => {
+    y = ensurePageBreak(doc, y, 15)
+    doc.setDrawColor(226, 232, 240)
+    doc.line(margin, y + 5, pageWidth - margin, y + 5)
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(17, 24, 39)
+    doc.text(String(row[0] || '-'), margin, y)
+    doc.setFont('helvetica', 'normal')
+    doc.setTextColor(71, 85, 105)
+    doc.text(String(row[1] || '-'), margin + 70, y)
+    doc.text(String(row[2] || '-'), margin + 125, y)
+    y += 11
+  })
+  return y + 7
+}
+
+export function downloadReportPdf(report) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' })
   const filename = `${slugify(report?.title)}-${slugify(report?.period)}.pdf`
 
@@ -72,19 +113,9 @@ export function downloadReportPdf(report, quickStats = []) {
   y += 38
 
   y = ensurePageBreak(doc, y, 50)
-  y = addSectionTitle(doc, 'Quick Stats', y)
-  quickStats.forEach((stat) => {
-    y = ensurePageBreak(doc, y, 18)
-    doc.setFillColor(248, 250, 252)
-    doc.roundedRect(margin, y - 5, contentWidth, 14, 2, 2, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(10)
-    doc.setTextColor(17, 24, 39)
-    doc.text(stat.label, margin + 5, y + 3)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(71, 85, 105)
-    doc.text(`${stat.value} - ${stat.sub}`, margin + 75, y + 3)
-    y += 18
+  y = addMetricCards(doc, report?.metrics || [], y)
+  ;(report?.sections || []).forEach((section) => {
+    y = addReportSection(doc, section, y)
   })
 
   y = ensurePageBreak(doc, y, 34)
