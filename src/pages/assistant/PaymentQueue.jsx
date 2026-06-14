@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react'
 import { CreditCard, Eye, Check, X, Search, RefreshCw } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
@@ -10,6 +11,7 @@ import { supabase } from '../../lib/supabase'
 import useAuthStore from '../../store/authStore'
 import useAppointmentStore from '../../store/appointmentStore'
 import { formatDate } from '../../lib/utils'
+import { appointmentBelongsToAssistantDoctor } from '../../lib/assistantAccounts'
 import toast from 'react-hot-toast'
 
 const DEMO_SCREENSHOT = 'https://placehold.co/400x200/e2e8f0/64748b?text=Payment+Receipt'
@@ -30,6 +32,7 @@ export default function PaymentQueue() {
 
     // 1. Get all appointments from local store (works offline/demo)
     const allLocal = getAllAppointments()
+      .filter((appointment) => appointmentBelongsToAssistantDoctor(appointment, profile))
     const fromStore = allLocal.map(a => ({
       id: 'pay-' + a.id,
       appointmentId: a.id,
@@ -55,13 +58,13 @@ export default function PaymentQueue() {
     }
 
     // 2. Try Supabase for real users
-    if (user?.isDemo) {
+    if (user?.isDemo || user?.isLocalAssistant) {
       setLoading(false)
       return
     }
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('payments')
         .select(`
           *,
@@ -73,8 +76,12 @@ export default function PaymentQueue() {
         `)
         .order('created_at', { ascending: false })
 
+      const { data, error } = await query
+
       if (!error && data && data.length > 0) {
-        const fromSupabase = data.map(p => ({
+        const fromSupabase = data
+          .filter(p => !profile?.assignedDoctorId || p.appointment?.doctor?.id === profile.assignedDoctorId)
+          .map(p => ({
           id: p.id,
           appointmentId: p.appointment_id,
           patientId: p.appointment?.patient?.id,
@@ -104,7 +111,7 @@ export default function PaymentQueue() {
 
   useEffect(() => {
     loadPayments()
-  }, [user?.id])
+  }, [user?.id, profile?.assignedDoctorId])
 
   // ── Verify ────────────────────────────────────────────────
   const verify = async (paymentId) => {

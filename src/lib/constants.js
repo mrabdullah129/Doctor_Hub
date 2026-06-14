@@ -114,6 +114,7 @@ export const NAVIGATION = {
     { path: '/doctor/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
     { path: '/doctor/appointments', label: 'Appointments', icon: 'Calendar' },
     { path: '/doctor/patients', label: 'My Patients', icon: 'Users' },
+    { path: '/doctor/assistants', label: 'Assistants', icon: 'Users' },
     { path: '/doctor/prescriptions', label: 'Prescriptions', icon: 'Pill' },
     { path: '/doctor/schedule', label: 'Schedule', icon: 'Clock' },
     { path: '/doctor/clinic', label: 'Clinic', icon: 'Building2' },

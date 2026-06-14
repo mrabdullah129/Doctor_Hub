@@ -27,6 +27,9 @@ function createMissingSupabaseClient() {
         },
       }),
     },
+    functions: {
+      invoke: rejectMissingConfig,
+    },
     from: () => {
       throw missingConfigError
     },

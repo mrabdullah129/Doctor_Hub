@@ -1,6 +1,7 @@
+/* eslint-disable react-hooks/immutability, react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react'
 import {
-  CreditCard, Calendar, CheckCircle2, Clock, AlertTriangle,
+  Calendar, CheckCircle2, Clock, AlertTriangle,
   Eye, X, Check, TrendingUp, ZoomIn
 } from 'lucide-react'
 import {
@@ -17,6 +18,7 @@ import useAppointmentStore from '../../store/appointmentStore'
 import { supabase } from '../../lib/supabase'
 import toast from 'react-hot-toast'
 import { formatDate } from '../../lib/utils'
+import { appointmentBelongsToAssistantDoctor } from '../../lib/assistantAccounts'
 
 const DEMO_SCREENSHOT = 'https://placehold.co/400x200/e2e8f0/64748b?text=Payment+Receipt'
 
@@ -43,11 +45,12 @@ export default function AssistantDashboard() {
   // ── Load pending payments from store + Supabase ──────────
   useEffect(() => {
     loadPendingPayments()
-  }, [user?.id])
+  }, [user?.id, profile?.assignedDoctorId])
 
   const loadPendingPayments = async () => {
     // 1. From local store
     const allLocal = getAllAppointments()
+      .filter((appointment) => appointmentBelongsToAssistantDoctor(appointment, profile))
     const pendingLocal = allLocal
       .filter(a => a.status === 'payment_uploaded' || a.status === 'pending')
       .map(a => ({
@@ -69,11 +72,11 @@ export default function AssistantDashboard() {
       setPayments(pendingLocal)
     }
 
-    if (user?.isDemo) return
+    if (user?.isDemo || user?.isLocalAssistant) return
 
     // 2. Try Supabase
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('payments')
         .select(`*, appointment:appointment_id (
           id, appointment_date, appointment_time, fee, status,
@@ -83,8 +86,12 @@ export default function AssistantDashboard() {
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
 
+      const { data, error } = await query
+
       if (!error && data && data.length > 0) {
-        const fromDB = data.map(p => ({
+        const fromDB = data
+          .filter(p => !profile?.assignedDoctorId || p.appointment?.doctor?.id === profile.assignedDoctorId)
+          .map(p => ({
           id: p.id,
           appointmentId: p.appointment_id,
           patientId: p.appointment?.patient?.id,

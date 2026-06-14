@@ -10,7 +10,7 @@ import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 
 const schema = z.object({
-  email: z.string().email('Please enter a valid email'),
+  email: z.string().min(3, 'Please enter your email or username'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
 })
 
@@ -21,7 +21,7 @@ export default function Login() {
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') || null
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm({
+  const { register, handleSubmit, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
   })
 
@@ -111,9 +111,9 @@ export default function Login() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <Input
-              label="Email Address"
-              type="email"
-              placeholder="you@example.com"
+              label="Email or Username"
+              type="text"
+              placeholder="you@example.com or assistant1"
               icon={Mail}
               error={errors.email?.message}
               {...register('email')}

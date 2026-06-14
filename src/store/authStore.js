@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
+import { getAssistantDoctorAssignment, resolveAssistantLogin } from '../lib/assistantAccounts'
 
 // Demo mode is opt-in via VITE_ENABLE_DEMO=true
 const ENABLE_DEMO = import.meta.env.VITE_ENABLE_DEMO === 'true'
@@ -20,6 +21,8 @@ const useAuthStore = create(
 
       login: async (email, password) => {
         set({ loading: true, error: null })
+        const loginEmail = await resolveAssistantLogin(email)
+
         // ── Demo bypass (only when ENABLE_DEMO=true) ───────────
         const DEMO = {
           'patient@demo.com':      { id: 'demo-patient-001',    full_name: 'Ali Hassan',    role: 'patient',     phone: '+92 300 1234567', city: 'Karachi' },
@@ -38,7 +41,7 @@ const useAuthStore = create(
         // ── End demo bypass ───────────────────────────────────
 
         try {
-          const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+          const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password })
           if (error) throw error
 
           set({ user: data.user })
@@ -64,6 +67,17 @@ const useAuthStore = create(
             }
             await supabase.from('profiles').upsert(fallback)
             profile = fallback
+          }
+
+          if (profile?.role === 'assistant') {
+            const assignment = await getAssistantDoctorAssignment(profile)
+            profile = assignment ? {
+              ...profile,
+              assignedDoctorId: assignment.doctorId,
+              assignedDoctorProfileId: assignment.doctorProfileId,
+              assignedDoctorName: assignment.doctorName,
+              assignedDoctorSpecialty: assignment.doctorSpecialty,
+            } : profile
           }
 
           set({ profile, loading: false })
@@ -176,6 +190,21 @@ const useAuthStore = create(
         if (!user || user.isDemo) return
         const { data: profile } = await supabase
           .from('profiles').select('*').eq('id', user.id).single()
+        if (profile?.role === 'assistant') {
+          const assignment = await getAssistantDoctorAssignment(profile)
+          if (assignment) {
+            set({
+              profile: {
+                ...profile,
+                assignedDoctorId: assignment.doctorId,
+                assignedDoctorProfileId: assignment.doctorProfileId,
+                assignedDoctorName: assignment.doctorName,
+                assignedDoctorSpecialty: assignment.doctorSpecialty,
+              },
+            })
+            return
+          }
+        }
         if (profile) set({ profile })
       },
 

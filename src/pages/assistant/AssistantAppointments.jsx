@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect, react-hooks/exhaustive-deps */
 import { useState, useEffect } from 'react'
 import { Calendar, Clock, CheckCircle2, Search, RefreshCw } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
@@ -9,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 import useAuthStore from '../../store/authStore'
 import useAppointmentStore from '../../store/appointmentStore'
 import { formatDate } from '../../lib/utils'
+import { appointmentBelongsToAssistantDoctor } from '../../lib/assistantAccounts'
 import toast from 'react-hot-toast'
 
 const statusVariant = {
@@ -45,6 +47,7 @@ export default function AssistantAppointments() {
 
     // 1. Local store — always works
     const allLocal = getAllAppointments()
+      .filter((appointment) => appointmentBelongsToAssistantDoctor(appointment, profile))
     const fromStore = allLocal.map(a => ({
       id: a.id,
       supabaseId: a.supabaseId || null,
@@ -64,12 +67,18 @@ export default function AssistantAppointments() {
     }
 
     // 2. Try Supabase for real users
-    if (user?.isDemo) { setLoading(false); return }
+    if (user?.isDemo || user?.isLocalAssistant) { setLoading(false); return }
 
     try {
+      if (!profile?.assignedDoctorId) {
+        setLoading(false)
+        return
+      }
+
       const { data, error } = await supabase
         .from('appointments')
         .select('*, patient:patient_id(id, full_name, phone), doctor:doctor_id(id, display_name, specialization)')
+        .eq('doctor_id', profile?.assignedDoctorId)
         .order('appointment_date', { ascending: true })
 
       if (!error && data && data.length > 0) {
@@ -99,7 +108,7 @@ export default function AssistantAppointments() {
     }
   }
 
-  useEffect(() => { loadAppointments() }, [user?.id])
+  useEffect(() => { loadAppointments() }, [user?.id, profile?.assignedDoctorId])
 
   // ── Confirm appointment ───────────────────────────────────
   const confirmAppointment = async (apt) => {

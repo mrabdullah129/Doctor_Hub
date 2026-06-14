@@ -86,6 +86,7 @@ CREATE TABLE IF NOT EXISTS public.assistants (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   profile_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE UNIQUE NOT NULL,
   doctor_id UUID REFERENCES public.doctors(id) ON DELETE CASCADE NOT NULL,
+  username TEXT,
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

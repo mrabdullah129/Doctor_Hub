@@ -27,6 +27,7 @@ import DoctorDashboard    from './pages/doctor/DoctorDashboard'
 import DoctorAppointments from './pages/doctor/DoctorAppointments'
 import CreatePrescription from './pages/doctor/CreatePrescription'
 import MyPatients         from './pages/doctor/MyPatients'
+import DoctorAssistants   from './pages/doctor/DoctorAssistants'
 import Schedule           from './pages/doctor/Schedule'
 import Clinic             from './pages/doctor/Clinic'
 import DoctorAnalytics    from './pages/doctor/Analytics'
@@ -104,6 +105,7 @@ function App() {
         <Route path="/doctor/dashboard"    element={<ProtectedRoute allowedRoles={['doctor']}><DoctorDashboard /></ProtectedRoute>} />
         <Route path="/doctor/appointments" element={<ProtectedRoute allowedRoles={['doctor']}><DoctorAppointments /></ProtectedRoute>} />
         <Route path="/doctor/patients"     element={<ProtectedRoute allowedRoles={['doctor']}><MyPatients /></ProtectedRoute>} />
+        <Route path="/doctor/assistants"   element={<ProtectedRoute allowedRoles={['doctor']}><DoctorAssistants /></ProtectedRoute>} />
         <Route path="/doctor/prescriptions" element={<ProtectedRoute allowedRoles={['doctor']}><CreatePrescription /></ProtectedRoute>} />
         <Route path="/doctor/schedule"     element={<ProtectedRoute allowedRoles={['doctor']}><Schedule /></ProtectedRoute>} />
         <Route path="/doctor/clinic"       element={<ProtectedRoute allowedRoles={['doctor']}><Clinic /></ProtectedRoute>} />
