@@ -10,6 +10,8 @@
 <img width="959" height="440" alt="Screenshot 2026-06-14 192110" src="https://github.com/user-attachments/assets/34b2a7fe-012f-438a-961a-17e16feb63bc" />
 <img width="959" height="439" alt="Screenshot 2026-06-14 192132" src="https://github.com/user-attachments/assets/7e45ddb7-b80f-4cf1-b931-e31499460d2c" />
 
+**link**
+https://doctor-hub-ashen.vercel.app/assistant/dashboard
 
 **Superadmin**
 superadmin@gmail.com
@@ -23,8 +25,8 @@ ajstylesjutt18@gmail.com**doctor
 javaidabdullah509@gmail.com
 12345678
 **assistant**
-assistant@gmail.com
-assistant123
+affan@gmail.com
+123456
 
 
 
