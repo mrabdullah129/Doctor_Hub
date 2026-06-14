@@ -1,4 +1,4 @@
-
+<img width="959" height="439" alt="image" src="https://github.com/user-attachments/assets/e479918a-8f57-4324-9f8e-ba063ea79d33" />
 <img width="959" height="471" alt="Screenshot 2026-06-14 191802" src="https://github.com/user-attachments/assets/b65e5f0c-8142-4a61-9843-4951ef0b3ee9" />
 <img width="959" height="441" alt="Screenshot 2026-06-14 191820" src="https://github.com/user-attachments/assets/bdbef24c-fdc0-4602-a303-04ca1aa83f77" />
 <img width="959" height="443" alt="Screenshot 2026-06-14 191900" src="https://github.com/user-attachments/assets/c455b2e5-7ff7-4ce2-8f9e-ab827d00206d" />
@@ -11,6 +11,20 @@
 <img width="959" height="439" alt="Screenshot 2026-06-14 192132" src="https://github.com/user-attachments/assets/7e45ddb7-b80f-4cf1-b931-e31499460d2c" />
 
 
+**Superadmin**
+superadmin@gmail.com
+super@gmail.com
+**admin**
+admin@gmail.com
+admin123**
+ajstylesjutt18@gmail.com**doctor
+12345678
+**patient**
+javaidabdullah509@gmail.com
+12345678
+**assistant**
+assistant@gmail.com
+assistant123
 
 
 
