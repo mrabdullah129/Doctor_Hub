@@ -166,6 +166,7 @@ CREATE TABLE IF NOT EXISTS public.prescriptions (
 CREATE TABLE IF NOT EXISTS public.prescription_medicines (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   prescription_id UUID REFERENCES public.prescriptions(id) ON DELETE CASCADE NOT NULL,
+  doctor_id UUID REFERENCES public.doctors(id) ON DELETE CASCADE NOT NULL,
   name TEXT NOT NULL,
   strength TEXT,
   form TEXT DEFAULT 'Tablet',
@@ -316,6 +317,21 @@ CREATE POLICY "prescriptions_select_own" ON public.prescriptions
     doctor_id IN (SELECT id FROM public.doctors WHERE profile_id = auth.uid()));
 
 CREATE POLICY "prescriptions_insert_doctor" ON public.prescriptions
+  FOR INSERT WITH CHECK (
+    doctor_id IN (SELECT id FROM public.doctors WHERE profile_id = auth.uid())
+  );
+
+-- Doctors can create medicine rows only for prescriptions they issued
+CREATE POLICY "prescription_medicines_select_own" ON public.prescription_medicines
+  FOR SELECT USING (
+    doctor_id IN (SELECT id FROM public.doctors WHERE profile_id = auth.uid())
+    OR prescription_id IN (
+      SELECT id FROM public.prescriptions
+      WHERE patient_id = auth.uid()
+    )
+  );
+
+CREATE POLICY "prescription_medicines_insert_doctor" ON public.prescription_medicines
   FOR INSERT WITH CHECK (
     doctor_id IN (SELECT id FROM public.doctors WHERE profile_id = auth.uid())
   );

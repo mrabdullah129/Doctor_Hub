@@ -1,15 +1,19 @@
-import { useState } from 'react'
-import { Pill, Download, Printer, Calendar, User, Lock, Search } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Pill, Download, Printer, Calendar, Lock, Search } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
-import Card, { CardHeader, CardTitle } from '../../components/ui/Card'
+import Card from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import Avatar from '../../components/ui/Avatar'
 import Button from '../../components/ui/Button'
 import Modal from '../../components/ui/Modal'
 import { formatDate } from '../../lib/utils'
 import toast from 'react-hot-toast'
+import useAuthStore from '../../store/authStore'
+import { getPatientPrescriptions } from '../../lib/dataService'
+import PropTypes from 'prop-types'
+import { downloadPrescriptionPdf } from '../../lib/prescriptionPdf'
 
-const prescriptions = [
+const DEMO_PRESCRIPTIONS = [
   {
     id: 1,
     doctor: 'Dr. Sarah Ahmed',
@@ -40,7 +44,7 @@ const prescriptions = [
   },
 ]
 
-function PrescriptionDetail({ prescription, onClose }) {
+function PrescriptionDetail({ prescription }) {
   if (!prescription) return null
 
   return (
@@ -77,8 +81,8 @@ function PrescriptionDetail({ prescription, onClose }) {
       <div>
         <p className="text-sm font-bold text-text-primary mb-3">Prescribed Medicines</p>
         <div className="space-y-3">
-          {prescription.medicines.map((med, i) => (
-            <div key={i} className="border border-surface-200 rounded-xl overflow-hidden">
+          {prescription.medicines.map((med) => (
+            <div key={`${med.name}-${med.strength}-${med.dosage}`} className="border border-surface-200 rounded-xl overflow-hidden">
               <div className="flex items-center gap-3 p-4 bg-surface-50">
                 <div className="w-10 h-10 rounded-xl bg-teal-50 flex items-center justify-center flex-shrink-0">
                   <Pill className="w-5 h-5 text-teal-600" />
@@ -138,11 +142,15 @@ function PrescriptionDetail({ prescription, onClose }) {
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
-        <Button variant="secondary" className="flex-1" onClick={() => toast.success('Downloading PDF...')}>
+        <Button
+          variant="secondary"
+          className="flex-1"
+          onClick={() => downloadPrescriptionPdf(prescription, { filename: `prescription-${prescription.id}.pdf` })}
+        >
           <Download className="w-4 h-4" />
           Download PDF
         </Button>
-        <Button className="flex-1" onClick={() => window.print()}>
+        <Button className="flex-1" onClick={() => globalThis.print()}>
           <Printer className="w-4 h-4" />
           Print
         </Button>
@@ -151,13 +159,63 @@ function PrescriptionDetail({ prescription, onClose }) {
   )
 }
 
+PrescriptionDetail.propTypes = {
+  prescription: PropTypes.shape({
+    id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    date: PropTypes.string.isRequired,
+    doctor: PropTypes.string,
+    specialty: PropTypes.string,
+    diagnosis: PropTypes.string.isRequired,
+    medicines: PropTypes.arrayOf(
+      PropTypes.shape({
+        name: PropTypes.string.isRequired,
+        strength: PropTypes.string,
+        form: PropTypes.string,
+        dosage: PropTypes.string,
+        frequency: PropTypes.string,
+        duration: PropTypes.string,
+        instructions: PropTypes.string,
+      })
+    ).isRequired,
+    advice: PropTypes.string,
+    followUp: PropTypes.string,
+  }).isRequired,
+}
+
 export default function Prescriptions() {
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
+  const [prescriptions, setPrescriptions] = useState([])
+  const user = useAuthStore((s) => s.user)
+  const profile = useAuthStore((s) => s.profile)
+
+  useEffect(() => {
+    let mounted = true
+    async function load() {
+      if (user?.isDemo) {
+        setPrescriptions(DEMO_PRESCRIPTIONS)
+        return
+      }
+      if (!profile?.id) return
+      try {
+        const data = await getPatientPrescriptions(profile.id)
+        if (!mounted) return
+        setPrescriptions(data)
+      } catch (err) {
+        toast.error(err.message || 'Failed to load prescriptions')
+      } finally {
+        if (mounted) {
+          // no-op: loading state removed
+        }
+      }
+    }
+    load()
+    return () => { mounted = false }
+  }, [profile, user])
 
   const filtered = prescriptions.filter((p) =>
-    p.doctor.toLowerCase().includes(search.toLowerCase()) ||
-    p.diagnosis.toLowerCase().includes(search.toLowerCase())
+    (p.doctor || p.doctor_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (p.diagnosis || '').toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -219,8 +277,8 @@ export default function Prescriptions() {
 
               {/* Medicines preview */}
               <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-surface-100">
-                {rx.medicines.map((med, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 text-xs px-2.5 py-1 rounded-full font-medium">
+                {rx.medicines.map((med) => (
+                  <span key={`${med.name}-${med.strength}-${med.dosage}`} className="inline-flex items-center gap-1 bg-teal-50 text-teal-700 text-xs px-2.5 py-1 rounded-full font-medium">
                     <Pill className="w-3 h-3" />
                     {med.name} {med.strength}
                   </span>

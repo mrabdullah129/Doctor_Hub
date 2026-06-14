@@ -159,3 +159,68 @@ export async function getDoctorByProfileId(profileId) {
   if (error) throw error
   return data
 }
+
+// ── Prescriptions ───────────────────────────────────────────────────────────
+
+export async function getPatientPrescriptions(patientId) {
+  const { data, error } = await supabase
+    .from('prescriptions')
+    .select(`
+      *,
+      doctor:doctor_id ( id, display_name, specialization ),
+      prescription_medicines ( id, name, strength, form, dosage, frequency, duration, instructions )
+    `)
+    .eq('patient_id', patientId)
+    .order('issued_at', { ascending: false })
+  if (error) throw error
+  return (data || []).map((prescription) => ({
+    id: prescription.id,
+    patient_id: prescription.patient_id,
+    doctor_id: prescription.doctor_id,
+    diagnosis: prescription.diagnosis,
+    advice: prescription.advice || '',
+    follow_up: prescription.follow_up || '',
+    status: prescription.is_active ? 'active' : 'inactive',
+    date: prescription.issued_at,
+    doctor: prescription.doctor?.display_name || 'Doctor',
+    specialty: prescription.doctor?.specialization || '',
+    medicines: prescription.prescription_medicines || [],
+  }))
+}
+
+export async function createPrescription(payload) {
+  const { medicines = [], ...prescriptionPayload } = payload
+
+  const { data: prescription, error: prescriptionError } = await supabase
+    .from('prescriptions')
+    .insert(prescriptionPayload)
+    .select()
+    .single()
+
+  if (prescriptionError) throw prescriptionError
+
+  if (Array.isArray(medicines) && medicines.length > 0) {
+    const medicineRows = medicines.map((medicine) => ({
+      prescription_id: prescription.id,
+      doctor_id: prescription.doctor_id,
+      name: medicine.name,
+      strength: medicine.strength || '',
+      form: medicine.form || 'Tablet',
+      dosage: medicine.dosage || '',
+      frequency: medicine.frequency || '',
+      duration: medicine.duration || '',
+      instructions: medicine.instructions || '',
+    }))
+
+    const { error: medicinesError } = await supabase
+      .from('prescription_medicines')
+      .insert(medicineRows)
+
+    if (medicinesError) {
+      await supabase.from('prescriptions').delete().eq('id', prescription.id)
+      throw medicinesError
+    }
+  }
+
+  return { ...prescription, medicines }
+}

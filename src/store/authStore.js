@@ -2,7 +2,8 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../lib/supabase'
 
-// Demo accounts removed — app now uses Supabase for auth and profiles
+// Demo mode is opt-in via VITE_ENABLE_DEMO=true
+const ENABLE_DEMO = import.meta.env.VITE_ENABLE_DEMO === 'true'
 
 const useAuthStore = create(
   persist(
@@ -19,8 +20,7 @@ const useAuthStore = create(
 
       login: async (email, password) => {
         set({ loading: true, error: null })
-
-        // ── Demo bypass ───────────────────────────────────────
+        // ── Demo bypass (only when ENABLE_DEMO=true) ───────────
         const DEMO = {
           'patient@demo.com':      { id: 'demo-patient-001',    full_name: 'Ali Hassan',    role: 'patient',     phone: '+92 300 1234567', city: 'Karachi' },
           'doctor@demo.com':       { id: 'demo-doctor-001',     full_name: 'Dr. Sarah Ahmed', role: 'doctor',   phone: '+92 321 9876543', city: 'Karachi' },
@@ -29,7 +29,7 @@ const useAuthStore = create(
           'superadmin@demo.com':   { id: 'demo-superadmin-001', full_name: 'Zara Khan',     role: 'super_admin', phone: '+92 345 9999999', city: 'Islamabad' },
         }
         const emailLower = email.toLowerCase().trim()
-        if (DEMO[emailLower] && password === 'demo123') {
+        if (ENABLE_DEMO && DEMO[emailLower] && password === 'demo123') {
           await new Promise(r => setTimeout(r, 500))
           const profile = { ...DEMO[emailLower], email: emailLower, avatar_url: null }
           set({ user: { id: profile.id, email: emailLower, isDemo: true }, profile, loading: false, error: null })
@@ -146,9 +146,9 @@ const useAuthStore = create(
 
       forgotPassword: async (email) => {
         set({ loading: true, error: null })
-        // Demo accounts — pretend success
+        // Demo accounts — pretend success only when demo enabled
         const demoEmails = ['patient@demo.com','doctor@demo.com','assistant@demo.com','admin@demo.com','superadmin@demo.com']
-        if (demoEmails.includes(email.toLowerCase())) {
+        if (ENABLE_DEMO && demoEmails.includes(email.toLowerCase())) {
           await new Promise(r => setTimeout(r, 500))
           set({ loading: false })
           return { success: true }
