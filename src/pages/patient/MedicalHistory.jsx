@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   FileText, Pill, Activity, Calendar, Lock, ChevronDown,
   ChevronRight, Info, Stethoscope
@@ -9,50 +9,9 @@ import Badge from '../../components/ui/Badge'
 import Avatar from '../../components/ui/Avatar'
 import { formatDate } from '../../lib/utils'
 import { cn } from '../../lib/utils'
-
-const medicalHistory = [
-  {
-    id: 1,
-    date: new Date(Date.now() - 86400000 * 7).toISOString(),
-    doctor: 'Dr. Sarah Ahmed',
-    specialty: 'Cardiologist',
-    diagnosis: 'Hypertension Stage 1',
-    treatment: 'Prescribed ACE inhibitors and lifestyle changes',
-    type: 'consultation',
-    prescriptions: [
-      { name: 'Lisinopril 10mg', dosage: '1 tablet', frequency: 'Once daily', duration: '30 days' },
-      { name: 'Amlodipine 5mg', dosage: '1 tablet', frequency: 'Once daily', duration: '30 days' },
-    ],
-    notes: 'Patient advised to monitor blood pressure daily. Follow up in 1 month.',
-  },
-  {
-    id: 2,
-    date: new Date(Date.now() - 86400000 * 30).toISOString(),
-    doctor: 'Dr. Hassan Khan',
-    specialty: 'General Physician',
-    diagnosis: 'Acute Bronchitis',
-    treatment: 'Antibiotics and supportive care',
-    type: 'consultation',
-    prescriptions: [
-      { name: 'Amoxicillin 500mg', dosage: '1 capsule', frequency: 'Twice daily', duration: '7 days' },
-      { name: 'Salbutamol Inhaler', dosage: '2 puffs', frequency: 'As needed', duration: '14 days' },
-    ],
-    notes: 'Chest X-ray normal. Follow up if symptoms worsen.',
-  },
-  {
-    id: 3,
-    date: new Date(Date.now() - 86400000 * 90).toISOString(),
-    doctor: 'Dr. Fatima Shah',
-    specialty: 'Dermatologist',
-    diagnosis: 'Eczema (Atopic Dermatitis)',
-    treatment: 'Topical corticosteroids and moisturizer therapy',
-    type: 'consultation',
-    prescriptions: [
-      { name: 'Hydrocortisone Cream 1%', dosage: 'Apply thin layer', frequency: 'Twice daily', duration: '21 days' },
-    ],
-    notes: 'Avoid known triggers. Use mild soap. Moisturize regularly.',
-  },
-]
+import useAuthStore from '../../store/authStore'
+import { supabase } from '../../lib/supabase'
+import { getPatientPrescriptions } from '../../lib/dataService'
 
 const typeIcons = {
   consultation: Stethoscope,
@@ -157,6 +116,91 @@ function HistoryItem({ record }) {
 }
 
 export default function MedicalHistory() {
+  const profile = useAuthStore((s) => s.profile)
+  const [records, setRecords] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadHistory = async () => {
+      if (!profile?.id) return
+
+      setLoading(true)
+      try {
+        const [historyResult, prescriptions] = await Promise.all([
+          supabase
+            .from('medical_history')
+            .select(`
+              *,
+              doctor:doctor_id ( id, display_name, specialization )
+            `)
+            .eq('patient_id', profile.id)
+            .order('date', { ascending: false }),
+          getPatientPrescriptions(profile.id),
+        ])
+
+        if (historyResult.error) throw historyResult.error
+
+        const historyRows = historyResult.data || []
+        const historyIds = new Set(historyRows.map((row) => row.id))
+        const prescriptionByHistory = new Map()
+
+        prescriptions.forEach((prescription) => {
+          if (!prescription.medical_history_id) return
+          prescriptionByHistory.set(prescription.medical_history_id, prescription)
+        })
+
+        const fromHistory = historyRows.map((row) => {
+          const linkedPrescription = prescriptionByHistory.get(row.id)
+          return {
+            id: `history-${row.id}`,
+            sourceId: row.id,
+            date: row.date || row.created_at,
+            doctor: row.doctor?.display_name || 'Doctor',
+            specialty: row.doctor?.specialization || '',
+            diagnosis: row.diagnosis || '-',
+            treatment: row.treatment || linkedPrescription?.advice || '-',
+            type: row.type || 'consultation',
+            prescriptions: linkedPrescription?.medicines || [],
+            notes: row.notes || linkedPrescription?.followUp || '',
+          }
+        })
+
+        const fromPrescriptions = prescriptions
+          .filter((prescription) => !prescription.medical_history_id || !historyIds.has(prescription.medical_history_id))
+          .map((prescription) => ({
+            id: `prescription-${prescription.id}`,
+            sourceId: prescription.id,
+            date: prescription.date,
+            doctor: prescription.doctor || 'Doctor',
+            specialty: prescription.specialty || '',
+            diagnosis: prescription.diagnosis || '-',
+            treatment: prescription.advice || 'Prescription issued',
+            type: 'consultation',
+            prescriptions: prescription.medicines || [],
+            notes: prescription.followUp || '',
+          }))
+
+        const merged = [...fromHistory, ...fromPrescriptions]
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+
+        if (mounted) setRecords(merged)
+      } catch (error) {
+        console.warn('Failed to load medical history:', error)
+        if (mounted) setRecords([])
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+
+    loadHistory()
+    return () => { mounted = false }
+  }, [profile?.id])
+
+  const prescriptionCount = records.reduce((sum, record) => sum + record.prescriptions.length, 0)
+  const diagnosisCount = new Set(records.map((record) => record.diagnosis).filter(Boolean)).size
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -174,17 +218,17 @@ export default function MedicalHistory() {
         {/* Summary cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {[
-            { label: 'Total Records', value: '12', icon: FileText, color: 'text-primary-600 bg-primary-50' },
-            { label: 'Consultations', value: '8', icon: Stethoscope, color: 'text-secondary-500 bg-secondary-50' },
-            { label: 'Prescriptions', value: '15', icon: Pill, color: 'text-teal-600 bg-teal-50' },
-            { label: 'Diagnoses', value: '5', icon: Activity, color: 'text-purple-600 bg-purple-50' },
+            { label: 'Total Records', value: records.length, icon: FileText, color: 'text-primary-600 bg-primary-50' },
+            { label: 'Consultations', value: records.filter((record) => record.type === 'consultation').length, icon: Stethoscope, color: 'text-secondary-500 bg-secondary-50' },
+            { label: 'Prescriptions', value: prescriptionCount, icon: Pill, color: 'text-teal-600 bg-teal-50' },
+            { label: 'Diagnoses', value: diagnosisCount, icon: Activity, color: 'text-purple-600 bg-purple-50' },
           ].map((item) => (
             <Card key={item.label} className="flex items-center gap-3 py-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.color}`}>
                 <item.icon className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-xl font-bold text-text-primary">{item.value}</p>
+                <p className="text-xl font-bold text-text-primary">{String(item.value)}</p>
                 <p className="text-xs text-text-muted">{item.label}</p>
               </div>
             </Card>
@@ -203,11 +247,24 @@ export default function MedicalHistory() {
         {/* Timeline */}
         <div>
           <h2 className="text-lg font-bold text-text-primary mb-5">Consultation Timeline</h2>
-          <div className="space-y-0">
-            {medicalHistory.map((record) => (
-              <HistoryItem key={record.id} record={record} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="text-center py-16">
+              <FileText className="w-12 h-12 text-surface-200 mx-auto mb-3 animate-pulse" />
+              <p className="font-bold text-text-primary">Loading medical history...</p>
+            </div>
+          ) : records.length > 0 ? (
+            <div className="space-y-0">
+              {records.map((record) => (
+                <HistoryItem key={record.id} record={record} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-16">
+              <FileText className="w-12 h-12 text-surface-200 mx-auto mb-3" />
+              <p className="font-bold text-text-primary">No medical history yet</p>
+              <p className="text-text-muted text-sm mt-1">Records will appear here after a doctor creates them.</p>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

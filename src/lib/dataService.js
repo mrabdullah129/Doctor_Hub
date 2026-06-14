@@ -178,6 +178,7 @@ export async function getPatientPrescriptions(patientId) {
     id: prescription.id,
     patient_id: prescription.patient_id,
     doctor_id: prescription.doctor_id,
+    medical_history_id: prescription.medical_history_id,
     diagnosis: prescription.diagnosis,
     advice: prescription.advice || '',
     follow_up: prescription.follow_up || '',
@@ -194,9 +195,35 @@ export async function getPatientPrescriptions(patientId) {
 export async function createPrescription(payload) {
   const { medicines = [], ...prescriptionPayload } = payload
 
+  let medicalHistoryId = prescriptionPayload.medical_history_id || null
+
+  if (!medicalHistoryId && prescriptionPayload.patient_id && prescriptionPayload.doctor_id) {
+    const { data: history, error: historyError } = await supabase
+      .from('medical_history')
+      .insert({
+        patient_id: prescriptionPayload.patient_id,
+        doctor_id: prescriptionPayload.doctor_id,
+        appointment_id: prescriptionPayload.appointment_id || null,
+        diagnosis: prescriptionPayload.diagnosis,
+        treatment: prescriptionPayload.advice || 'Prescription issued',
+        type: 'consultation',
+        notes: prescriptionPayload.follow_up
+          ? `Follow-up: ${prescriptionPayload.follow_up}`
+          : null,
+      })
+      .select('id')
+      .single()
+
+    if (historyError) throw historyError
+    medicalHistoryId = history.id
+  }
+
   const { data: prescription, error: prescriptionError } = await supabase
     .from('prescriptions')
-    .insert(prescriptionPayload)
+    .insert({
+      ...prescriptionPayload,
+      medical_history_id: medicalHistoryId,
+    })
     .select()
     .single()
 
