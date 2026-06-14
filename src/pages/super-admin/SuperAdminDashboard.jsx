@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   Users, Shield, ActivitySquare, Lock, TrendingUp, Globe,
   AlertTriangle, CheckCircle2, Server, Database
@@ -10,6 +11,7 @@ import DashboardLayout from '../../components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '../../components/ui/Card'
 import Badge from '../../components/ui/Badge'
 import { formatDate } from '../../lib/utils'
+import { supabase } from '../../lib/supabase'
 
 const systemData = [
   { time: '00:00', requests: 120, errors: 2 },
@@ -21,14 +23,6 @@ const systemData = [
   { time: 'Now', requests: 210, errors: 0 },
 ]
 
-const auditLogs = [
-  { id: 1, user: 'admin@doctorhub.pk', action: 'VERIFY_DOCTOR', resource: 'Dr. Hassan Ali', timestamp: new Date().toISOString(), level: 'info' },
-  { id: 2, user: 'super@doctorhub.pk', action: 'ROLE_CHANGE', resource: 'user#2341', timestamp: new Date(Date.now() - 3600000).toISOString(), level: 'warning' },
-  { id: 3, user: 'admin@doctorhub.pk', action: 'DELETE_USER', resource: 'user#1122', timestamp: new Date(Date.now() - 7200000).toISOString(), level: 'danger' },
-  { id: 4, user: 'system', action: 'BACKUP_COMPLETE', resource: 'database', timestamp: new Date(Date.now() - 14400000).toISOString(), level: 'info' },
-  { id: 5, user: 'admin@doctorhub.pk', action: 'CONFIG_CHANGE', resource: 'payment_settings', timestamp: new Date(Date.now() - 21600000).toISOString(), level: 'warning' },
-]
-
 const levelColors = {
   info: 'blue',
   warning: 'yellow',
@@ -36,11 +30,65 @@ const levelColors = {
 }
 
 export default function SuperAdminDashboard() {
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    revenue: 0,
+    activeRegions: 0,
+    securityScore: 100,
+  })
+  const [auditLogs, setAuditLogs] = useState([])
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadDashboard = async () => {
+      try {
+        const [profilesResult, paymentsResult, doctorsResult, auditResult] = await Promise.all([
+          supabase.from('profiles').select('city', { count: 'exact', head: false }),
+          supabase.from('payments').select('amount, status').eq('status', 'verified'),
+          supabase.from('doctors').select('city'),
+          supabase.from('audit_logs').select('id, user_id, action, resource, created_at, level').order('created_at', { ascending: false }).limit(5),
+        ])
+
+        if (!mounted) return
+
+        const profiles = profilesResult.data || []
+        const doctors = doctorsResult.data || []
+        const cities = new Set([
+          ...profiles.map((profile) => profile.city).filter(Boolean),
+          ...doctors.map((doctor) => doctor.city).filter(Boolean),
+        ])
+        const revenue = (paymentsResult.data || []).reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+        const logs = auditResult.data || []
+
+        setMetrics({
+          totalUsers: profilesResult.count ?? profiles.length,
+          revenue,
+          activeRegions: cities.size,
+          securityScore: logs.some((log) => log.level === 'danger' || log.level === 'critical') ? 90 : 100,
+        })
+        setAuditLogs(logs.map((log) => ({
+          id: log.id,
+          user: log.user_id || 'system',
+          action: log.action,
+          resource: log.resource,
+          timestamp: log.created_at,
+          level: log.level || 'info',
+        })))
+      } catch (error) {
+        console.warn('Failed to load super admin dashboard:', error)
+      }
+    }
+
+    loadDashboard()
+    return () => { mounted = false }
+  }, [])
+
   const stats = [
-    { label: 'Total Platform Users', value: '22,585', icon: Users, color: 'text-primary-600 bg-primary-50', sub: '+245 this month' },
-    { label: 'Global Revenue', value: 'Rs 4.2M', icon: TrendingUp, color: 'text-secondary-500 bg-secondary-50', sub: '+27% YoY' },
-    { label: 'Active Regions', value: '8', icon: Globe, color: 'text-teal-600 bg-teal-50', sub: 'Cities nationwide' },
-    { label: 'Security Score', value: '97/100', icon: Shield, color: 'text-purple-600 bg-purple-50', sub: 'Excellent' },
+    { label: 'Total Platform Users', value: metrics.totalUsers.toLocaleString(), icon: Users, color: 'text-primary-600 bg-primary-50', sub: 'From profiles table' },
+    { label: 'Global Revenue', value: `Rs ${metrics.revenue.toLocaleString()}`, icon: TrendingUp, color: 'text-secondary-500 bg-secondary-50', sub: 'Verified payments' },
+    { label: 'Active Regions', value: metrics.activeRegions.toLocaleString(), icon: Globe, color: 'text-teal-600 bg-teal-50', sub: 'Cities in user/doctor data' },
+    { label: 'Security Score', value: `${metrics.securityScore}/100`, icon: Shield, color: 'text-purple-600 bg-purple-50', sub: metrics.securityScore === 100 ? 'No danger logs' : 'Review danger logs' },
   ]
 
   const systemHealth = [

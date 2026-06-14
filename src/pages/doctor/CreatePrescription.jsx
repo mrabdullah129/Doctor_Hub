@@ -30,6 +30,7 @@ export default function CreatePrescription() {
   // Build patient list from real appointments for this doctor
   const [patients, setPatients] = useState([])
   const [doctorRecordId, setDoctorRecordId] = useState('')
+  const [doctorInfo, setDoctorInfo] = useState({ name: '', specialty: '' })
 
   const localPatients = useMemo(() => {
     const all = getAllAppointments()
@@ -65,12 +66,18 @@ export default function CreatePrescription() {
       try {
         const { data: doctorRow } = await supabase
           .from('doctors')
-          .select('id')
+          .select('id, display_name, specialization')
           .eq('profile_id', doctorProfileId)
           .maybeSingle()
 
         const doctorId = doctorRow?.id
         if (!cancelled) setDoctorRecordId(doctorId || '')
+        if (!cancelled) {
+          setDoctorInfo({
+            name: doctorRow?.display_name || profile?.full_name || 'Doctor',
+            specialty: doctorRow?.specialization || '',
+          })
+        }
         if (!doctorId) {
           if (!cancelled) setPatients(localPatients)
           return
@@ -139,8 +146,8 @@ export default function CreatePrescription() {
       {
         id: `draft-${Date.now()}`,
         date: new Date().toISOString(),
-        doctor: profile?.full_name || 'Doctor',
-        specialty: profile?.role || 'doctor',
+        doctor: doctorInfo.name || profile?.full_name || 'Doctor',
+        specialty: doctorInfo.specialty || '-',
         patientName: selectedPatientName || 'Patient',
         diagnosis,
         medicines,

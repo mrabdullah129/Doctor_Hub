@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Search, UserPlus, CheckCircle2, XCircle, Shield, Edit2, Trash2 } from 'lucide-react'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import Card, { CardHeader, CardTitle } from '../../components/ui/Card'
@@ -7,21 +7,69 @@ import Badge from '../../components/ui/Badge'
 import Button from '../../components/ui/Button'
 import { formatDate } from '../../lib/utils'
 import toast from 'react-hot-toast'
-
-const users = [
-  { id: 1, name: 'Ali Hassan', email: 'ali@example.com', role: 'patient', status: 'active', joined: new Date(Date.now() - 86400000 * 30).toISOString() },
-  { id: 2, name: 'Dr. Sarah Ahmed', email: 'sarah@example.com', role: 'doctor', status: 'active', joined: new Date(Date.now() - 86400000 * 60).toISOString() },
-  { id: 3, name: 'Dr. Amna Sheikh', email: 'amna@example.com', role: 'doctor', status: 'pending', joined: new Date().toISOString() },
-  { id: 4, name: 'Fatima Malik', email: 'fatima@example.com', role: 'assistant', status: 'active', joined: new Date(Date.now() - 86400000 * 10).toISOString() },
-  { id: 5, name: 'Omar Farooq', email: 'omar@example.com', role: 'patient', status: 'inactive', joined: new Date(Date.now() - 86400000 * 90).toISOString() },
-  { id: 6, name: 'Dr. Raza Mir', email: 'raza@example.com', role: 'doctor', status: 'pending', joined: new Date().toISOString() },
-]
+import { supabase } from '../../lib/supabase'
 
 const roleColor = { patient: 'gray', doctor: 'blue', assistant: 'teal', admin: 'purple', super_admin: 'red' }
 
 export default function UserManagement() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
+  const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(false)
+
+  const loadUsers = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, role, is_active, created_at')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      setUsers((data || []).map((user) => ({
+        id: user.id,
+        name: user.full_name || user.email || 'User',
+        email: user.email || '',
+        role: user.role || 'patient',
+        status: user.is_active === false ? 'inactive' : 'active',
+        joined: user.created_at,
+      })))
+    } catch (error) {
+      toast.error(error.message || 'Failed to load users')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    loadUsers()
+  }, [])
+
+  const handleDeleteUser = async (user) => {
+    const ok = globalThis.confirm(`Delete/deactivate ${user.name}?`)
+    if (!ok) return
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', user.id)
+
+      if (error) {
+        const fallback = await supabase
+          .from('profiles')
+          .update({ is_active: false })
+          .eq('id', user.id)
+        if (fallback.error) throw fallback.error
+        toast.success(`${user.name} deactivated`)
+      } else {
+        toast.success(`${user.name} deleted`)
+      }
+
+      loadUsers()
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete user')
+    }
+  }
 
   const filtered = users.filter(u =>
     (roleFilter === 'all' || u.role === roleFilter) &&
@@ -34,7 +82,9 @@ export default function UserManagement() {
         <div className="flex items-start justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-2xl font-bold text-text-primary">User Management</h1>
-            <p className="text-text-muted mt-1">{users.length} total users on the platform</p>
+            <p className="text-text-muted mt-1">
+              {loading ? 'Loading users...' : `${users.length} total users on the platform`}
+            </p>
           </div>
           <Button icon={UserPlus} onClick={() => toast.success('Invite user feature coming soon!')}>
             Invite User
@@ -101,7 +151,7 @@ export default function UserManagement() {
                         <button className="p-1.5 hover:bg-primary-50 text-primary-600 rounded-lg transition-colors" title="Edit Role">
                           <Shield className="w-4 h-4" />
                         </button>
-                        <button onClick={() => toast.error('User deactivated')} className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title="Deactivate">
+                        <button onClick={() => handleDeleteUser(u)} className="p-1.5 hover:bg-red-50 text-red-500 rounded-lg transition-colors" title="Delete / Deactivate">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>

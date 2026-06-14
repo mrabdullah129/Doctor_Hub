@@ -138,6 +138,7 @@ export const NAVIGATION = {
   super_admin: [
     { path: '/super-admin/dashboard', label: 'Dashboard', icon: 'LayoutDashboard' },
     { path: '/super-admin/users', label: 'User Management', icon: 'Users' },
+    { path: '/admin/doctors', label: 'Doctors', icon: 'Stethoscope' },
     { path: '/super-admin/roles', label: 'Role Management', icon: 'Shield' },
     { path: '/super-admin/audit', label: 'Audit Logs', icon: 'ActivitySquare' },
     { path: '/super-admin/security', label: 'Security', icon: 'Lock' },

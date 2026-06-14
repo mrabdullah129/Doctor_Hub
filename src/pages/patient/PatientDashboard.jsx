@@ -78,7 +78,7 @@ export default function PatientDashboard() {
             </h1>
             <p className="text-text-muted mt-1">Here's what's happening with your health today.</p>
           </div>
-          <Link to="/doctors">
+          <Link to="/patient/search">
             <Button icon={Search}>Find a Doctor</Button>
           </Link>
         </div>
@@ -119,7 +119,7 @@ export default function PatientDashboard() {
                 <div className="text-center py-10">
                   <Calendar className="w-10 h-10 text-surface-200 mx-auto mb-3" />
                   <p className="text-text-muted text-sm font-medium">No upcoming appointments</p>
-                  <Link to="/doctors" className="text-primary-600 text-sm font-semibold hover:underline mt-1 block">
+                  <Link to="/patient/search" className="text-primary-600 text-sm font-semibold hover:underline mt-1 block">
                     Book one now
                   </Link>
                 </div>
@@ -162,7 +162,7 @@ export default function PatientDashboard() {
               <CardTitle className="mb-4">Quick Actions</CardTitle>
               <div className="space-y-2">
                 {[
-                  { icon: Search,       label: 'Search Doctors',    href: '/doctors',                   color: 'text-primary-600 bg-primary-50'  },
+                  { icon: Search,       label: 'Search Doctors',    href: '/patient/search',            color: 'text-primary-600 bg-primary-50'  },
                   { icon: Calendar,     label: 'My Appointments',   href: '/patient/appointments',      color: 'text-secondary-500 bg-secondary-50' },
                   { icon: FileText,     label: 'Medical History',   href: '/patient/medical-history',   color: 'text-purple-600 bg-purple-50'   },
                   { icon: Pill,         label: 'Prescriptions',     href: '/patient/prescriptions',     color: 'text-teal-600 bg-teal-50'       },

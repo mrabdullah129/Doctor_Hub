@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   Users, Stethoscope, Calendar, TrendingUp, ShieldCheck,
   AlertTriangle, CheckCircle2, XCircle, ArrowRight, Activity
@@ -13,6 +13,7 @@ import Badge from '../../components/ui/Badge'
 import Avatar from '../../components/ui/Avatar'
 import Button from '../../components/ui/Button'
 import { formatDate } from '../../lib/utils'
+import { supabase } from '../../lib/supabase'
 
 const monthlyData = [
   { month: 'Jan', users: 1200, revenue: 240000, appointments: 350 },
@@ -23,26 +24,97 @@ const monthlyData = [
   { month: 'Jun', users: 2100, revenue: 420000, appointments: 610 },
 ]
 
-const roleDistribution = [
-  { name: 'Patients', value: 22000, color: '#2563eb' },
-  { name: 'Doctors', value: 450, color: '#10b981' },
-  { name: 'Assistants', value: 120, color: '#14b8a6' },
-  { name: 'Admins', value: 15, color: '#8b5cf6' },
-]
-
-const recentUsers = [
-  { id: 1, name: 'Dr. Amna Sheikh', role: 'doctor', status: 'pending', date: new Date().toISOString() },
-  { id: 2, name: 'Bilal Khan', role: 'patient', status: 'active', date: new Date().toISOString() },
-  { id: 3, name: 'Dr. Raza Mir', role: 'doctor', status: 'pending', date: new Date().toISOString() },
-  { id: 4, name: 'Sara Qadir', role: 'patient', status: 'active', date: new Date().toISOString() },
-]
+const roleColors = {
+  Patients: '#2563eb',
+  Doctors: '#10b981',
+  Assistants: '#14b8a6',
+  Admins: '#8b5cf6',
+}
 
 export default function AdminDashboard() {
+  const [metrics, setMetrics] = useState({
+    totalUsers: 0,
+    activeDoctors: 0,
+    totalAppointments: 0,
+    monthlyRevenue: 0,
+    pendingDoctors: 0,
+  })
+  const [roleDistribution, setRoleDistribution] = useState([])
+  const [recentUsers, setRecentUsers] = useState([])
+
+  useEffect(() => {
+    let mounted = true
+
+    const loadMetrics = async () => {
+      try {
+        const [
+          profilesResult,
+          doctorsResult,
+          appointmentsResult,
+          paymentsResult,
+          recentResult,
+        ] = await Promise.all([
+          supabase.from('profiles').select('role', { count: 'exact', head: false }),
+          supabase.from('doctors').select('is_verified', { count: 'exact', head: false }),
+          supabase.from('appointments').select('id', { count: 'exact', head: true }),
+          supabase.from('payments').select('amount, status, created_at').eq('status', 'verified'),
+          supabase.from('profiles').select('id, full_name, email, role, is_active, created_at').order('created_at', { ascending: false }).limit(4),
+        ])
+
+        if (!mounted) return
+
+        const profiles = profilesResult.data || []
+        const doctors = doctorsResult.data || []
+        const payments = paymentsResult.data || []
+        const monthStart = new Date()
+        monthStart.setDate(1)
+        monthStart.setHours(0, 0, 0, 0)
+
+        const revenue = payments
+          .filter((payment) => new Date(payment.created_at) >= monthStart)
+          .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+
+        const roleCounts = profiles.reduce((acc, profile) => {
+          acc[profile.role] = (acc[profile.role] || 0) + 1
+          return acc
+        }, {})
+
+        setMetrics({
+          totalUsers: profilesResult.count ?? profiles.length,
+          activeDoctors: doctors.filter((doctor) => doctor.is_verified).length,
+          totalAppointments: appointmentsResult.count || 0,
+          monthlyRevenue: revenue,
+          pendingDoctors: doctors.filter((doctor) => !doctor.is_verified).length,
+        })
+
+        setRoleDistribution([
+          { name: 'Patients', value: roleCounts.patient || 0, color: roleColors.Patients },
+          { name: 'Doctors', value: roleCounts.doctor || 0, color: roleColors.Doctors },
+          { name: 'Assistants', value: roleCounts.assistant || 0, color: roleColors.Assistants },
+          { name: 'Admins', value: (roleCounts.admin || 0) + (roleCounts.super_admin || 0), color: roleColors.Admins },
+        ])
+
+        setRecentUsers((recentResult.data || []).map((user) => ({
+          id: user.id,
+          name: user.full_name || user.email || 'User',
+          role: user.role || 'patient',
+          status: user.is_active === false ? 'inactive' : 'active',
+          date: user.created_at,
+        })))
+      } catch (error) {
+        console.warn('Failed to load admin metrics:', error)
+      }
+    }
+
+    loadMetrics()
+    return () => { mounted = false }
+  }, [])
+
   const stats = [
-    { label: 'Total Users', value: '22,585', icon: Users, color: 'text-primary-600 bg-primary-50', change: '+245 this month' },
-    { label: 'Active Doctors', value: '485', icon: Stethoscope, color: 'text-secondary-500 bg-secondary-50', change: '+12 this month' },
-    { label: 'Total Appointments', value: '2,760', icon: Calendar, color: 'text-purple-600 bg-purple-50', change: '+18% growth' },
-    { label: 'Monthly Revenue', value: 'Rs 420K', icon: TrendingUp, color: 'text-teal-600 bg-teal-50', change: '+27% vs last month' },
+    { label: 'Total Users', value: metrics.totalUsers.toLocaleString(), icon: Users, color: 'text-primary-600 bg-primary-50', change: 'From profiles table' },
+    { label: 'Active Doctors', value: metrics.activeDoctors.toLocaleString(), icon: Stethoscope, color: 'text-secondary-500 bg-secondary-50', change: `${metrics.pendingDoctors} pending` },
+    { label: 'Total Appointments', value: metrics.totalAppointments.toLocaleString(), icon: Calendar, color: 'text-purple-600 bg-purple-50', change: 'From appointments table' },
+    { label: 'Monthly Revenue', value: `Rs ${metrics.monthlyRevenue.toLocaleString()}`, icon: TrendingUp, color: 'text-teal-600 bg-teal-50', change: 'Verified payments this month' },
   ]
 
   return (
@@ -140,7 +212,7 @@ export default function AdminDashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="space-y-2 mt-2">
-              {roleDistribution.map((item) => (
+            {roleDistribution.map((item) => (
                 <div key={item.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
