@@ -111,6 +111,26 @@
   </tr>
 </table>
 
+###SuperAdmin##
+<table>
+  <tr>
+    <td<img width="959" height="436" alt="Screenshot 2026-06-16 090031" src="https://github.com/user-attachments/assets/e8aca921-ac77-4ef4-bb03-c74f51d425bf" />
+ 
+ </td>
+    <td><img width="958" height="434" alt="Screenshot 2026-06-16 090039" src="https://github.com/user-attachments/assets/c0c7bd65-ba91-446d-a193-2175bc1caca9" />
+ </td>
+  </tr>
+  <tr><img width="952" height="435" alt="Screenshot 2026-06-16 090047" src="https://github.com/user-attachments/assets/09309f14-afee-4c56-aba8-a44f7fa983e8" />
+ </td>
+  </tr>
+   <tr>
+    <td><img width="953" height="437" alt="Screenshot 2026-06-16 090056" src="https://github.com/user-attachments/assets/bb1de370-cfed-4eef-9f88-521aea928d47" />
+ 
+ </td>
+    <td><img width="958" height="437" alt="Screenshot 2026-06-16 090104" src="https://github.com/user-attachments/assets/946d4ca0-5b74-4ebf-9353-076e6126a25f" />
+ </td>
+  </tr>
+</table>
 
 **link**
 https://doctor-hub-ashen.vercel.app/
