@@ -12,6 +12,27 @@
   </tr>
 </table>
 
+####Patient###
+
+<table>
+  <tr>
+    <td><img width="956" height="431" alt="Screenshot 2026-06-16 062445" src="https://github.com/user-attachments/assets/d2998444-7077-4058-b3c0-ae4621f38185" />
+ 
+ </td>
+    <td><img width="955" height="435" alt="Screenshot 2026-06-16 062501" src="https://github.com/user-attachments/assets/8053083b-8a49-4bdd-8c60-aea647e6cd74" />
+ </td>
+  </tr>
+  <tr><img width="953" height="420" alt="Screenshot 2026-06-16 062515" src="https://github.com/user-attachments/assets/ea697b08-7d81-4256-9e43-5702ede144a4" /> 
+ </td>
+  </tr>
+   <tr>
+    <td><img width="959" height="435" alt="Screenshot 2026-06-16 062529" src="https://github.com/user-attachments/assets/b8098730-6c25-4fab-afbe-dd8cc31cfda8" />
+ 
+ </td>
+    <td><img width="959" height="425" alt="Screenshot 2026-06-16 083713" src="https://github.com/user-attachments/assets/addf962d-7985-438e-8db6-5878b0fc4a0b" />
+ </td>
+  </tr>
+</table>
 
 **link**
 https://doctor-hub-ashen.vercel.app/
