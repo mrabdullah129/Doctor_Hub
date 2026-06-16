@@ -2,19 +2,19 @@
 <table>
   <tr>
     <td><img width="950" height="440" alt="Screenshot 2026-06-16 061739" src="https://github.com/user-attachments/assets/808dfd5f-d42c-4e3f-be1a-2b18bf14ec53" />
- /></td>
+ </td>
     <td><img width="953" height="439" alt="Screenshot 2026-06-16 061754" src="https://github.com/user-attachments/assets/9d6468d1-c04f-410a-aa15-9ed630e61a6e" />
- /></td>
+ </td>
   </tr>
   <tr>
     <td><img width="950" height="437" alt="Screenshot 2026-06-16 061818" src="https://github.com/user-attachments/assets/2d4740a3-2847-47d1-b1e7-fb07d3497578" />
- /></td>
+ </td>
   </tr>
 </table>
 
-**link**
-https://doctor-hub-ashen.vercel.app/assistant/dashboard
 
+**link**
+https://doctor-hub-ashen.vercel.app/
 **Superadmin**
 superadmin@gmail.com
 super@gmail.com
