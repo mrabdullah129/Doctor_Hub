@@ -34,6 +34,45 @@
   </tr>
 </table>
 
+###Doctor###
+<table>
+  <tr>
+    <td><img width="956" height="439" alt="Screenshot 2026-06-16 084402" src="https://github.com/user-attachments/assets/6faaa012-4f60-4563-9e62-6c3656a1c94e" /> />
+ 
+ </td>
+    <td><img width="956" height="433" alt="Screenshot 2026-06-16 084417" src="https://github.com/user-attachments/assets/e7116a18-394f-4e2b-9cef-2084ada0f15e" /> />
+ </td>
+  </tr>
+  <tr><img width="959" height="440" alt="Screenshot 2026-06-16 084449" src="https://github.com/user-attachments/assets/34f19c3a-6f14-4f92-80bb-d00179da93c1" /> /> 
+ </td>
+  </tr>
+   <tr>
+    <td><img width="959" height="437" alt="Screenshot 2026-06-16 084508" src="https://github.com/user-attachments/assets/c241a7e0-381e-42e5-9f68-491a65d01b80" /> />
+ 
+ </td>
+    <td><img width="958" height="436" alt="Screenshot 2026-06-16 084528" src="https://github.com/user-attachments/assets/9937a60d-1d37-4f52-bff1-c7a1d543745f" /> />
+ </td>
+  </tr>
+   <tr>
+    <td><img width="956" height="431" alt="Screenshot 2026-06-16 084541" src="https://github.com/user-attachments/assets/43dca153-77fa-4174-b582-785e62bd25c7" /> />
+ 
+ </td>
+    <td><img width="959" height="425" alt="Screenshot 2026-06-16 084553" src="https://github.com/user-attachments/assets/3d917bb9-8e67-44e0-9f59-3d6f33984cdd" /> />
+ </td>
+  </tr>
+   <tr>
+    <td><img width="959" height="437" alt="Screenshot 2026-06-16 084604" src="https://github.com/user-attachments/assets/5a53201c-7d8f-4194-a9ef-c09c834bd995" /> />
+ 
+ </td>
+    <td><img width="959" height="442" alt="Screenshot 2026-06-16 084621" src="https://github.com/user-attachments/assets/984821cc-1cf5-4ae2-babc-8c46a3cc3443" />
+ </td>
+  </tr>
+</table>
+
+
+
+
+
 **link**
 https://doctor-hub-ashen.vercel.app/
 **Superadmin**
