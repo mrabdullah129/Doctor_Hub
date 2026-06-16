@@ -72,7 +72,7 @@
 ###Assistant###
 <table>
   <tr>
-    <td><img width="959" height="439" alt="Screenshot 2026-06-16 085121" src="https://github.com/user-attachments/assets/bf5a6efa-8ee3-4c45-8822-e2cf13a92b5a" /> />
+    <td<img width="959" height="439" alt="Screenshot 2026-06-16 085121" src="https://github.com/user-attachments/assets/0c1beabb-840e-40b9-9219-577feafbb369" />
  
  </td>
     <td><img width="958" height="435" alt="Screenshot 2026-06-16 085129" src="https://github.com/user-attachments/assets/8a588d50-28e0-44e1-a300-92de3a0d0640" /> />
